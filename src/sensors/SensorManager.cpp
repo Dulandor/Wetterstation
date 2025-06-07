@@ -37,7 +37,7 @@ SensorData SensorManager::readData() {
     dps.readAltitude(1013),
     Lightsensor_getIlluminance(),
     veml.getUV(),
-    millis() / 1000  // Basic timestamp, will be updated by TimeManager
+    0  // Timestamp will be set by the caller
   };
 }
 
@@ -48,7 +48,8 @@ int SensorManager::read_reg(byte address, uint8_t reg) {
   Wire.endTransmission();
   Wire.requestFrom((uint8_t)address, (uint8_t)1);
   delay(1);
-  if(Wire.available()) i = Wire.read();
+  if(Wire.available())
+    i = Wire.read();
   return i;
 }
 
@@ -60,37 +61,40 @@ void SensorManager::write_reg(byte address, uint8_t reg, uint8_t val) {
 }
 
 void SensorManager::Lightsensor_begin() {
-  unsigned int u = read_reg(0x29, 0x80 | 0x0A);
-  if ((u & 0xF0) == 0xA0) {  // TSL45315
-    write_reg(0x29, 0x80 | 0x00, 0x03);
-    write_reg(0x29, 0x80 | 0x01, 0x02);
+  unsigned int u = 0;
+  u = read_reg(0x29, 0x80 | 0x0A); //id register
+  if ((u & 0xF0) == 0xA0) {        // TSL45315
+    write_reg(0x29, 0x80 | 0x00, 0x03); //control: power on
+    write_reg(0x29, 0x80 | 0x01, 0x02); //config: M=4 T=100ms
     delay(120);
-    lightsensortype = 0;
-  } else {  // LTR329
-    LTR.begin();
-    LTR.setControl(1, false, false);
-    LTR.setMeasurementRate(0, 3);
-    LTR.setPowerUp();
-    delay(10);
-    lightsensortype = 1;
+    lightsensortype = 0; //TSL45315
+  } else {
+    ltr.begin();
+    ltr.setControl(1, false, false);  // gain = 1
+    ltr.setMeasurementRate(0, 3);     // integration time = 0, measurement rate = 3
+    ltr.setPowerUp();                 // power on with default settings
+    delay(10);                        // Wait 10 ms (max) - wakeup time from standby
+    lightsensortype = 1;              // LTR-329ALS-01
   }
 }
 
 uint32_t SensorManager::Lightsensor_getIlluminance() {
+  unsigned int lux = 0;
   if (lightsensortype == 0) {  // TSL45315
-    unsigned int u = (read_reg(0x29, 0x80 | 0x04) << 0);
-    u |= (read_reg(0x29, 0x80 | 0x05) << 8);
-    return u * 4;
-  } else {  // LTR329
+    unsigned int u = (read_reg(0x29, 0x80 | 0x04) << 0);  //data low
+    u |= (read_reg(0x29, 0x80 | 0x05) << 8);             //data high
+    lux = u * 4;  // calc lux with M=4 and T=100ms
+  } else if (lightsensortype == 1) {  //LTR-329ALS-01
     delay(100);
     unsigned int data0, data1;
-    unsigned int lux = 0;
     for (int i = 0; i < 5; i++) {
-      if (LTR.getData(data0, data1)) {
-        if(LTR.getLux(1, 0, data0, data1, lux) && lux > 0) break;
+      if (ltr.getData(data0, data1)) {
+        if(ltr.getLux(1, 0, data0, data1, lux)) {
+          if(lux > 0) break;
+        }
         delay(10);
       }
     }
-    return lux;
   }
+  return lux;
 } 
