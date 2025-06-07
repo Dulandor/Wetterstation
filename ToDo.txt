@@ -1,0 +1,7 @@
+This is the list of features that need to be done/removed:
+1. All code related to the physical display can go
+2. The data is displayed on a website. This needs to be prettier (the sd card has 4 gb so maybe some css html from there?)
+3. There should be two pages on the website. One for data that is collect rn and a dashboard page to view all the data (that is saved on the sd card)
+4. The data needs to be saved on the sd card in a proper format. Maybe a txt is enough. 
+
+This wetter station is supposed to run for min. a year. 
