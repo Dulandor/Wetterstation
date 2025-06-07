@@ -40,10 +40,10 @@ A comprehensive weather station project for senseBox:edu that collects and displ
 ## ⚙️ Configuration
 
 1. Open `main.ino` in Arduino IDE
-2. The WiFi credentials are pre-configured:
+2. Configure your WiFi credentials:
    ```cpp
-   const char* WIFI_SSID = "FRITZ!Box 6490 Cable";
-   const char* WIFI_PASSWORD = "33317160926124716429";
+   const char* WIFI_SSID = "YOUR_WIFI_SSID";
+   const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
    ```
 3. Data logging interval is set to 5 minutes:
    ```cpp
