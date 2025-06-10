@@ -12,6 +12,7 @@ private:
   
   void sendDashboardResponse(WiFiClient& client);
   void sendLiveDataResponse(WiFiClient& client);
+  void sendJSONResponse(WiFiClient& client);
   String getCurrentData(const SensorData& data);
   String getDashboardData();
   String readHistoricalData();
@@ -22,4 +23,4 @@ public:
     
   void begin() { server.begin(); }
   void handleClient();
-}; 
+};

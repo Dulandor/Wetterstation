@@ -15,7 +15,9 @@ void WebServer::handleClient() {
         
         if (c == '\n') {
           if (currentLine.length() == 0) {
-            if (request.indexOf("GET /dashboard") >= 0) {
+            if (request.indexOf("GET /api/data") >= 0) {
+              sendJSONResponse(client);
+            } else if (request.indexOf("GET /dashboard") >= 0) {
               sendDashboardResponse(client);
             } else {
               sendLiveDataResponse(client);
@@ -198,4 +200,23 @@ String WebServer::readHistoricalData() {
 
   dataFile.close();
   return data;
-} 
+}
+
+void WebServer::sendJSONResponse(WiFiClient& client) {
+  SensorData data = sensorManager.readData();
+  
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: application/json");
+  client.println("Connection: close");
+  client.println();
+  
+  client.print("{");
+  client.print("\"timestamp\":\"" + timeManager.getFormattedTimestamp() + "\",");
+  client.print("\"temperature\":" + String(data.temperature, 2) + ",");
+  client.print("\"humidity\":" + String(data.humidity, 2) + ",");
+  client.print("\"pressure\":" + String(data.pressure, 2) + ",");
+  client.print("\"altitude\":" + String(data.altitude, 2) + ",");
+  client.print("\"light\":" + String(data.light) + ",");
+  client.print("\"uv\":" + String(data.uv));
+  client.print("}");
+}
