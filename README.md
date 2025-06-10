@@ -93,13 +93,13 @@ const int SD_CS_PIN = 28;
 ### Data Format
 ```json
 {
-  "timestamp": "2025-01-10T15:30:00Z",
-  "temperature": 23.5,
-  "humidity": 65.2,
+  "timestamp": "DD.MM.YYYY;HH:MM:SS",
+  "temperature": 25.5,
+  "humidity": 60.0,
   "pressure": 1013.25,
-  "altitude": 120.5,
-  "light": 1250,
-  "uv": 2.3
+  "altitude": 150.0,
+  "light": 500,
+  "uv": 3
 }
 ```
 
