@@ -43,6 +43,7 @@ const char* WIFI_SSID = "YOUR_WIFI_SSID";          // Replace with your WiFi net
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";  // Replace with your WiFi password
 const unsigned long DATA_SAVE_INTERVAL = 300000;   // Data logging interval: 5 minutes in milliseconds
 const int MAX_CONNECTION_ATTEMPTS = 3;             // Maximum WiFi connection retry attempts
+const unsigned long WIFI_STATUS_LOG_INTERVAL = 60000; // WiFi status logging interval: 1 minute in milliseconds
 
 // ===== GLOBAL OBJECTS =====
 // Sensor instances
@@ -59,6 +60,9 @@ static NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 60000);  // UTC+1, upd
 static SensorManager sensorManager(hdc, dps, veml, ltr);
 static TimeManager timeManager(timeClient);
 static WebServer webServer(sensorManager, timeManager);
+
+// Timing variables
+static unsigned long lastWiFiStatusLog = 0;
 
 // ===== SETUP =====
 void setup() {
@@ -138,6 +142,42 @@ void setup() {
 }
 
 void loop() {
+  // Check WiFi connection and reconnect if necessary
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi connection lost, attempting reconnect...");
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    
+    unsigned long reconnectStart = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - reconnectStart < 10000) {
+      delay(500);
+      Serial.print(".");
+    }
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nWiFi reconnected successfully");
+      IPAddress ip = WiFi.localIP();
+      Serial.print("IP Address: ");
+      Serial.println(ip);
+      timeManager.syncTime();  // Resync time after reconnection
+    } else {
+      Serial.println("\nWiFi reconnection failed");
+    }
+  }
+   
+  // Log WiFi status periodically for monitoring
+  if (millis() - lastWiFiStatusLog >= WIFI_STATUS_LOG_INTERVAL) {
+    lastWiFiStatusLog = millis();
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.print("WiFi Status: Connected (IP: ");
+      Serial.print(WiFi.localIP());
+      Serial.print(", RSSI: ");
+      Serial.print(WiFi.RSSI());
+      Serial.println(" dBm)");
+    } else {
+      Serial.println("WiFi Status: Disconnected");
+    }
+  }
+   
   // Update time synchronization periodically
   timeManager.update();
   
