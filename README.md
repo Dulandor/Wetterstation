@@ -1,98 +1,191 @@
 # 🌤️ Weather Station Project
 
-A comprehensive weather station project for senseBox:edu that collects and displays various environmental measurements.
+A modular Arduino-based weather station for senseBox:edu that provides comprehensive environmental monitoring with web interface and data logging capabilities.
 
-## 📋 Features
+## ✨ Key Features
 
-- **Temperature & Humidity** monitoring using HDC1000 sensor
-- **Pressure & Altitude** measurements with DPS310 sensor
-- **Light Intensity** detection using LTR329/TSL45315 sensor
-- **UV Radiation** monitoring with VEML6070 sensor
-- **Data Logging** to SD card
-- **Web Interface** for real-time data access
-- **NTP Time Synchronization**
-- **WiFi Connectivity**
+### 🌡️ **Multi-Sensor Environmental Monitoring**
+- **Temperature & Humidity**: HDC1000 sensor with ±0.2°C accuracy
+- **Atmospheric Pressure**: DPS310 sensor with altitude calculation
+- **Light Intensity**: Dual sensor support (LTR329/TSL45315) with automatic detection
+- **UV Radiation**: VEML6070 sensor for UV index monitoring
+
+### 📡 **Connectivity & Data Access**
+- **WiFi Connectivity**: Automatic connection with retry mechanism
+- **Web Server**: Real-time data dashboard accessible via browser
+- **NTP Time Sync**: Accurate timestamping for all measurements
+- **RESTful API**: JSON endpoints for data integration
+
+### 💾 **Data Management**
+- **SD Card Logging**: CSV format with configurable intervals (default: 5 minutes)
+- **Historical Data**: Web-accessible historical data viewer
+- **Data Structure**: Timestamped sensor readings with metadata
+
+### 🏗️ **Modular Architecture**
+- **SensorManager**: Centralized sensor initialization and data collection
+- **TimeManager**: NTP synchronization and timestamp management
+- **WebServer**: HTTP request handling and dashboard serving
 
 ## 🛠️ Hardware Requirements
 
-- senseBox:edu
-- HDC1000 Temperature & Humidity Sensor
-- DPS310 Pressure Sensor
-- LTR329/TSL45315 Light Sensor
-- VEML6070 UV Sensor
-- SD Card Module
-- WiFi Shield
+### Core Components
+- **senseBox:edu** (Arduino-compatible microcontroller)
+- **WiFi101 Shield** or compatible WiFi module
+- **MicroSD Card** (FAT32 formatted, Class 10 recommended)
 
-## 📦 Installation
+### Sensors
+- **HDC1000**: Temperature & Humidity (I2C: 0x40)
+- **DPS310**: Pressure & Altitude (I2C: 0x77)
+- **LTR329** or **TSL45315**: Light Intensity (I2C: 0x29/0x39)
+- **VEML6070**: UV Radiation (I2C: 0x38/0x39)
 
-1. Clone or download this repository
-2. Open the project in Arduino IDE
-3. Install required libraries:
-   - senseBoxIO (included with senseBox board package)
-   - Adafruit_HDC1000
-   - Adafruit_DPS310
-   - LTR329
-   - VEML6070
-   - WiFi101
-   - NTPClient
-   - SD
+### Connections
+- All sensors connect via I2C bus (SDA/SCL)
+- SD card uses SPI interface (CS pin 28)
+- WiFi shield uses dedicated SPI pins
 
-## ⚙️ Configuration
+## 📦 Installation & Setup
 
-1. Open `main.ino` in Arduino IDE
-2. Configure your WiFi credentials:
-   ```cpp
-   const char* WIFI_SSID = "YOUR_WIFI_SSID";
-   const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-   ```
-3. Data logging interval is set to 5 minutes:
-   ```cpp
-   const unsigned long DATA_SAVE_INTERVAL = 300000;  // 5 minutes
-   ```
+### 1. Library Dependencies
+Install these libraries via Arduino Library Manager:
+```
+senseBoxIO           # senseBox board support
+Adafruit_HDC1000     # Temperature/Humidity sensor
+Adafruit_DPS310      # Pressure sensor
+LTR329               # Light sensor (alternative)
+VEML6070             # UV sensor
+WiFi101              # WiFi connectivity
+NTPClient            # Network time protocol
+SD                   # SD card support
+```
 
-## 📤 Upload Instructions
+### 2. Configuration
+Edit the configuration constants in `main.ino`:
+```cpp
+// WiFi Settings (REQUIRED)
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-1. Connect your senseBox:edu to your computer
-2. Select "senseBox MCU" as the board in Arduino IDE
-3. Select the correct port
-4. Click the upload button or press Ctrl+U (Cmd+U on Mac)
+// Data Logging Interval
+const unsigned long DATA_SAVE_INTERVAL = 300000;  // 5 minutes
 
-## 📊 Data Access
+// Connection Settings
+const int MAX_CONNECTION_ATTEMPTS = 3;
+const int SD_CS_PIN = 28;
+```
 
-Once the weather station is running, you can access the data through:
+### 3. Upload Process
+1. Connect senseBox:edu via USB
+2. Select **"senseBox MCU"** in Arduino IDE
+3. Choose correct COM port
+4. Upload sketch (Ctrl+U / Cmd+U)
 
-- **Live Data**: Connect to the device's IP address in your web browser (displayed in Serial Monitor)
-- **Historical Data**: Access the dashboard at `http://[device-ip]/dashboard`
-- **Raw Data**: Check the SD card's `data.txt` file
+## 🌐 Web Interface
+
+### Accessing the Dashboard
+1. Monitor Serial output for IP address assignment
+2. Open browser and navigate to: `http://[DEVICE_IP]`
+3. Available endpoints:
+   - `/` - Live sensor dashboard
+   - `/dashboard` - Historical data viewer
+   - `/api/data` - JSON API for current readings
+
+### Data Format
+```json
+{
+  "timestamp": "2025-01-10T15:30:00Z",
+  "temperature": 23.5,
+  "humidity": 65.2,
+  "pressure": 1013.25,
+  "altitude": 120.5,
+  "light": 1250,
+  "uv": 2.3
+}
+```
+
+## 📁 Project Architecture
+
+```
+Weather-Station/
+├── main.ino                 # Main application entry point
+├── README.md                # This documentation
+├── LICENSE                  # Apache 2.0 license
+└── src/
+    ├── sensors/
+    │   ├── SensorManager.h   # Sensor interface definitions
+    │   └── SensorManager.cpp # Sensor implementation & data collection
+    ├── utils/
+    │   ├── TimeManager.h     # Time synchronization interface
+    │   └── TimeManager.cpp   # NTP client implementation
+    └── web/
+        ├── WebServer.h       # HTTP server interface
+        └── WebServer.cpp     # Web dashboard & API implementation
+```
+
+### Component Responsibilities
+
+**SensorManager** (`src/sensors/`)
+- Sensor initialization and health monitoring
+- Unified data collection from all sensors
+- Automatic light sensor type detection (LTR329/TSL45315)
+- I2C communication handling
+
+**TimeManager** (`src/utils/`)
+- NTP server synchronization
+- Timestamp generation for data logging
+- Time zone handling and formatting
+
+**WebServer** (`src/web/`)
+- HTTP request routing and response handling
+- Real-time dashboard serving
+- Historical data API endpoints
+- JSON data serialization
 
 ## 🔧 Troubleshooting
 
-If you encounter issues:
+### Common Issues
 
-1. **SD Card Not Initializing**:
-   - Check if the SD card is properly inserted
-   - Ensure the SD card is formatted as FAT32
-   - Verify the SD card module connections
-
-2. **WiFi Connection Issues**:
-   - Check if the WiFi shield is properly connected
-   - Verify WiFi credentials
-   - Check Serial Monitor for connection status and IP address
-
-## 📁 Project Structure
-
+**❌ SD Card Initialization Failed**
 ```
-├── main.ino              # Main program file
-└── src/
-    ├── sensors/         # Sensor management
-    │   ├── SensorManager.h
-    │   └── SensorManager.cpp
-    ├── utils/           # Utility functions
-    │   ├── TimeManager.h
-    │   └── TimeManager.cpp
-    └── web/             # Web server functionality
-        ├── WebServer.h
-        └── WebServer.cpp
+Solution:
+- Verify SD card is FAT32 formatted
+- Check CS pin connection (pin 28)
+- Try different SD card (Class 10 recommended)
+- Ensure proper 3.3V power supply
+```
+
+**❌ WiFi Connection Issues**
+```
+Solution:
+- Verify SSID and password in code
+- Check WiFi shield connections
+- Monitor Serial output for connection attempts
+- Ensure 2.4GHz network (5GHz not supported)
+```
+
+**❌ Sensor Not Detected**
+```
+Solution:
+- Check I2C connections (SDA/SCL)
+- Verify sensor power (3.3V)
+- Use I2C scanner to detect addresses
+- Check for conflicting I2C addresses
+```
+
+**❌ Time Synchronization Failed**
+```
+Solution:
+- Ensure internet connectivity
+- Check firewall settings (NTP port 123)
+- Verify NTP server accessibility
+- Monitor Serial output for sync status
+```
+
+### Debug Mode
+Enable verbose logging by monitoring Serial output at 9600 baud:
+```cpp
+Serial.begin(9600);
+// Watch for initialization status messages
 ```
 
 ## 🤝 Contributing
