@@ -1,32 +1,32 @@
-# 🌤️ Weather Station Project
+# Weather Station Project
 
 A modular Arduino-based weather station for senseBox:edu that provides comprehensive environmental monitoring with web interface and data logging capabilities.
 
-## ✨ Key Features
+## Key Features
 
-### 🌡️ **Multi-Sensor Environmental Monitoring**
+### Multi-Sensor Environmental Monitoring
 - **Temperature & Humidity**: HDC1000 sensor with ±0.2°C accuracy
 - **Atmospheric Pressure**: DPS310 sensor with altitude calculation
 - **Light Intensity**: Dual sensor support (LTR329/TSL45315) with automatic detection
 - **UV Radiation**: VEML6070 sensor for UV index monitoring
 
-### 📡 **Connectivity & Data Access**
+### Connectivity & Data Access
 - **WiFi Connectivity**: Automatic connection with retry mechanism
 - **Web Server**: Real-time data dashboard accessible via browser
 - **NTP Time Sync**: Accurate timestamping for all measurements
 - **RESTful API**: JSON endpoints for data integration
 
-### 💾 **Data Management**
+### Data Management
 - **SD Card Logging**: CSV format with configurable intervals (default: 5 minutes)
 - **Historical Data**: Web-accessible historical data viewer
 - **Data Structure**: Timestamped sensor readings with metadata
 
-### 🏗️ **Modular Architecture**
+### Modular Architecture
 - **SensorManager**: Centralized sensor initialization and data collection
 - **TimeManager**: NTP synchronization and timestamp management
 - **WebServer**: HTTP request handling and dashboard serving
 
-## 🛠️ Hardware Requirements
+## Hardware Requirements
 
 ### Core Components
 - **senseBox:edu** (Arduino-compatible microcontroller)
@@ -44,7 +44,7 @@ A modular Arduino-based weather station for senseBox:edu that provides comprehen
 - SD card uses SPI interface (CS pin 28)
 - WiFi shield uses dedicated SPI pins
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 ### 1. Library Dependencies
 Install these libraries via Arduino Library Manager:
@@ -80,7 +80,7 @@ const int SD_CS_PIN = 28;
 3. Choose correct COM port
 4. Upload sketch (Ctrl+U / Cmd+U)
 
-## 🌐 Web Interface
+## Web Interface
 
 ### Accessing the Dashboard
 1. Monitor Serial output for IP address assignment
@@ -103,7 +103,7 @@ const int SD_CS_PIN = 28;
 }
 ```
 
-## 📁 Project Architecture
+## Project Architecture
 
 ```
 Weather-Station/
@@ -141,11 +141,11 @@ Weather-Station/
 - Historical data API endpoints
 - JSON data serialization
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-**❌ SD Card Initialization Failed**
+**SD Card Initialization Failed**
 ```
 Solution:
 - Verify SD card is FAT32 formatted
@@ -154,7 +154,7 @@ Solution:
 - Ensure proper 3.3V power supply
 ```
 
-**❌ WiFi Connection Issues**
+**WiFi Connection Issues**
 ```
 Solution:
 - Verify SSID and password in code
@@ -163,7 +163,7 @@ Solution:
 - Ensure 2.4GHz network (5GHz not supported)
 ```
 
-**❌ Sensor Not Detected**
+**Sensor Not Detected**
 ```
 Solution:
 - Check I2C connections (SDA/SCL)
@@ -172,7 +172,7 @@ Solution:
 - Check for conflicting I2C addresses
 ```
 
-**❌ Time Synchronization Failed**
+**Time Synchronization Failed**
 ```
 Solution:
 - Ensure internet connectivity
@@ -188,10 +188,10 @@ Serial.begin(9600);
 // Watch for initialization status messages
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Feel free to submit issues and enhancement requests!
 
-## 📝 License
+## License
 
 This project is licensed under the Apache 2.0 License - see the LICENSE file for details.
