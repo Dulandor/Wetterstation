@@ -154,12 +154,13 @@ void loop() {
     }
     
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\nWiFi reconnected successfully");
-      IPAddress ip = WiFi.localIP();
-      Serial.print("IP Address: ");
-      Serial.println(ip);
-      timeManager.syncTime();  // Resync time after reconnection
-    } else {
+       Serial.println("\nWiFi reconnected successfully");
+       IPAddress ip = WiFi.localIP();
+       Serial.print("IP Address: ");
+       Serial.println(ip);
+       webServer.begin();  // Restart web server after reconnection
+       timeManager.syncTime();  // Resync time after reconnection
+     } else {
       Serial.println("\nWiFi reconnection failed");
     }
   }
