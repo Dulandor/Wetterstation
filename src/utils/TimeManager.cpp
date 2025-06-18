@@ -4,14 +4,32 @@
 bool TimeManager::syncTime() {
   Serial.println("Attempting NTP time sync...");
   
-  if (timeClient.update()) {
-    timeOffset = timeClient.getEpochTime() * 1000 - millis();
-    initialized = true;
-    Serial.println("Time sync successful");
-    return true;
+  // Check WiFi connection first
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Time sync failed: WiFi not connected");
+    return false;
   }
   
-  Serial.println("Time sync failed");
+  // Try multiple times with delays to handle network latency
+  for (int attempt = 1; attempt <= 3; attempt++) {
+    Serial.print("NTP sync attempt ");
+    Serial.print(attempt);
+    Serial.println("/3");
+    
+    if (timeClient.update()) {
+      timeOffset = timeClient.getEpochTime() * 1000 - millis();
+      initialized = true;
+      return true;
+    }
+    
+    if (attempt < 3) {
+      Serial.println("NTP sync attempt failed, retrying in 2 seconds...");
+      delay(2000);
+    }
+  }
+  
+  Serial.println("Time sync failed after 3 attempts");
+  Serial.println("Possible causes: DNS issues, firewall blocking NTP, or network latency");
   return false;
 }
 

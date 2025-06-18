@@ -27,7 +27,7 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 
-// Forward declarations
+// Forward declarations 
 class Adafruit_HDC1000;
 class Adafruit_DPS310;
 class LTR329;
@@ -54,7 +54,7 @@ static VEML6070 veml;          // UV radiation sensor
 
 // Network time protocol setup
 static WiFiUDP ntpUDP;
-static NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 60000);  // UTC+1, update every minute
+static NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600, 120000);  // UTC+1, update every 2 minutes with longer timeout
 
 // Manager instances for modular architecture
 static SensorManager sensorManager(hdc, dps, veml, ltr);
@@ -63,6 +63,9 @@ static WebServer webServer(sensorManager, timeManager);
 
 // Timing variables
 static unsigned long lastWiFiStatusLog = 0;
+static unsigned long lastDataSave = 0;
+static unsigned long lastWiFiReconnectAttempt = 0;
+static const unsigned long WIFI_RECONNECT_INTERVAL = 30000; // Try reconnecting every 30 seconds
 
 // ===== SETUP =====
 void setup() {
@@ -142,26 +145,34 @@ void setup() {
 }
 
 void loop() {
-  // Check WiFi connection and reconnect if necessary
+  // Non-blocking WiFi reconnection with cooldown period
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi connection lost, attempting reconnect...");
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    
-    unsigned long reconnectStart = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - reconnectStart < 10000) {
-      delay(500);
-      Serial.print(".");
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-       Serial.println("\nWiFi reconnected successfully");
-       IPAddress ip = WiFi.localIP();
-       Serial.print("IP Address: ");
-       Serial.println(ip);
-       webServer.begin();  // Restart web server after reconnection
-       timeManager.syncTime();  // Resync time after reconnection
-     } else {
-      Serial.println("\nWiFi reconnection failed");
+    // Only attempt reconnection if enough time has passed since last attempt
+    if (millis() - lastWiFiReconnectAttempt >= WIFI_RECONNECT_INTERVAL) {
+      lastWiFiReconnectAttempt = millis();
+      Serial.println("WiFi connection lost, attempting reconnect...");
+      WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+      
+      // Give it a brief moment to start connecting, but don't block
+      delay(1000);
+      
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("WiFi reconnected successfully");
+        IPAddress ip = WiFi.localIP();
+        String ipStr = String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]);
+        Serial.print("IP Address: ");
+        Serial.println(ipStr);
+        webServer.begin();  // Restart web server after reconnection
+        
+        // Wait a moment for network to stabilize before attempting NTP sync
+        Serial.println("Waiting 3 seconds for network to stabilize...");
+        delay(3000);
+        
+        // Attempt time sync after reconnection
+        timeManager.syncTime();  // Resync time after reconnection
+      } else {
+        Serial.println("WiFi reconnection failed, will retry in 30 seconds");
+      }
     }
   }
    
@@ -169,8 +180,10 @@ void loop() {
   if (millis() - lastWiFiStatusLog >= WIFI_STATUS_LOG_INTERVAL) {
     lastWiFiStatusLog = millis();
     if (WiFi.status() == WL_CONNECTED) {
+      IPAddress ip = WiFi.localIP();
+      String ipStr = String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]);
       Serial.print("WiFi Status: Connected (IP: ");
-      Serial.print(WiFi.localIP());
+      Serial.print(ipStr);
       Serial.print(", RSSI: ");
       Serial.print(WiFi.RSSI());
       Serial.println(" dBm)");
@@ -182,14 +195,16 @@ void loop() {
   // Update time synchronization periodically
   timeManager.update();
   
-  // Save sensor data at specified intervals
-  if (millis() % DATA_SAVE_INTERVAL < 1000) {
+  // Save sensor data at specified intervals (independent of WiFi status)
+  if (millis() - lastDataSave >= DATA_SAVE_INTERVAL) {
+    lastDataSave = millis();
     SensorData data = sensorManager.readData();
     data.timestamp = timeManager.getCurrentTimestamp();
     
     // Write data to SD card in CSV format
     File dataFile = SD.open("data.txt", FILE_WRITE);
     if (dataFile) {
+      // Use formatted timestamp (handles both NTP and fallback modes)
       dataFile.print(timeManager.getFormattedTimestamp());
       dataFile.print(",");
       dataFile.print(data.temperature);
@@ -204,7 +219,15 @@ void loop() {
       dataFile.print(",");
       dataFile.println(data.uv);
       dataFile.close();
-      Serial.println("Data saved to SD card");
+      
+      // Log save status with timing info
+      if (timeManager.isInitialized()) {
+        Serial.println("Data saved to SD card (NTP time)");
+      } else {
+        Serial.println("Data saved to SD card (device uptime)");
+      }
+    } else {
+      Serial.println("Failed to open SD card for writing");
     }
   }
   
